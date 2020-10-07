@@ -1,0 +1,24 @@
+{
+  "name": "gdp_bot",
+  "version": "1.0.0",
+  "description": "A bot connecting Good Docs Project Slack to GitHub",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "ngrok": "^3.3.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aidanatwork/gdpbot.git"
+  },
+  "author": "Aidan Doherty",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aidanatwork/gdpbot/issues"
+  },
+  "homepage": "https://github.com/aidanatwork/gdpbot#readme"
+}

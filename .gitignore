@@ -102,3 +102,10 @@ dist
 
 # TernJS port file
 .tern-port
+
+#ngrok
+ngrok
+.ngrok-stable-darwin-amd64.zip.icloud
+
+#other
+old_docs.md

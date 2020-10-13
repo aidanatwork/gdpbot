@@ -4,8 +4,11 @@
   "description": "A bot connecting Good Docs Project Slack to GitHub",
   "main": "index.js",
   "dependencies": {
+    "@slack/bolt": "^2.4.1",
     "dotenv": "^8.2.0",
-    "ngrok": "^3.3.0"
+    "ngrok": "^3.3.0",
+    "node-fetch": "^2.6.1",
+    "xml2js": "^0.4.23"
   },
   "devDependencies": {},
   "scripts": {

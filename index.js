@@ -3,6 +3,9 @@ const { App } = require('@slack/bolt');
 const fetch = require('node-fetch');
 const parseString = require('xml2js').parseString;
 const fbtoken = process.env.FOGBUGZ_TOKEN
+const api_domain = process.env.GIT_DOMAIN
+const api_owner = process.env.GIT_OWNER
+
 
 // Initializes your app with your bot token and signing secret
 const app = new App({
@@ -10,50 +13,39 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET
 });
 
-// Listens to incoming messages that mention a case number in "case XXXX" format.
-app.message(/case\s[0-9]+/gim, async ({ message, context, say }) => {
+// Listens to incoming messages that mention an issue number in "issue XXXX" format.
+app.message(/issue\s[0-9]+/gim, async ({ message, context, say }) => {
 
-  var case_links = '';
+  var issue_links = '';
   var mLen = context.matches.length;
-  var case_numbers = [];
+  var issue_numbers = [];
 
   for (i = 0; i < mLen; i++) {
-    case_number = context.matches[i].split(" ")[1]
-    case_title = ''
-    case_category = ''
-    case_icon = ''
+    issue_number = context.matches[i].split(" ")[1]
+    issue_title = ''
+    issue_category = ''
 
-    if (case_numbers.includes(case_number)) {
+    if (issue_numbers.includes(issue_number)) {
       continue
     }
     else {
-      case_numbers.push(case_number)
+      issue_numbers.push(issue_number)
     
-      await fetch(`https://mhk.thunderheadeng.net/fogbugz/api.asp?token=${fbtoken}&cmd=search&cols=sTitle,sCategory&q=${case_number}`)
+      await fetch(`https://mhk.thunderheadeng.net/fogbugz/api.asp?token=${fbtoken}&cmd=search&cols=sTitle,sCategory&q=${issue_number}`)
         .then(res => res.text())
         .then(body => parseString(body, function (err, result) {
           //console.dir(result,{depth: null})
-          if ( result.response.cases[0].$.count != '0' ) {
-            case_title = result.response.cases[0].case[0].sTitle[0]
-            case_category = result.response.cases[0].case[0].sCategory[0]
+          if ( result.response.issues[0].$.count != '0' ) {
+            issue_title = result.response.issues[0].issue[0].sTitle[0]
+            issue_category = result.response.issues[0].issue[0].sCategory[0]
           }        
         }));
-
-        if(case_category == 'Inquiry') {
-          case_icon = ':incoming_envelope:'
-        }
-        else if(case_category == 'Bug') {
-          case_icon = ':beetle:'
-        }
-        else if(case_category == 'Feature') {
-          case_icon = ':bulb:'
-        }
       
-      if (case_title != '') {
-        case_links += `<https://mhk.thunderheadeng.net/fogbugz/default.asp?${case_number}|${case_icon}${case_number}: '${case_title}'>, `
+      if (issue_title != '') {
+        issue_links += `<https://mhk.thunderheadeng.net/fogbugz/default.asp?${issue_number}|${issue_number}: '${issue_title}'>, `
       }
       else {
-        case_links += `~${case_number}: N/A~, `
+        issue_links += `~${issue_number}: N/A~, `
       } 
     }
   }
@@ -64,7 +56,7 @@ app.message(/case\s[0-9]+/gim, async ({ message, context, say }) => {
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": `See case(s) ${case_links}that <@${message.user}> mentioned.`
+        "text": `See issue(s) ${issue_links}that <@${message.user}> mentioned.`
       }
     }
     ]
@@ -100,9 +92,9 @@ app.message(/case\s[0-9]+/gim, async ({ message, context, say }) => {
 }); */
 
 // The echo command simply echoes on command
-app.command('/case', async ({ command, ack, say }) => {
+app.command('/issue', async ({ command, ack, say }) => {
   await ack();
-  await say(`Case Link: <https://mhk.thunderheadeng.net/fogbugz/default.asp?${command.text}|${command.text}>`);
+  await say(`Issue Link: <https://mhk.thunderheadeng.net/fogbugz/default.asp?${command.text}|${command.text}>`);
 });
 
 // Listen for a slash command invocation
@@ -117,10 +109,10 @@ app.shortcut('fbcase', async ({ ack, body, context }) => {
       // View payload
       view: {
         "type": "modal",
-        "callback_id": "case-reference",
+        "callback_id": "issue-reference",
         "title": {
           "type": "plain_text",
-          "text": "FogBugz Case Reference",
+          "text": "GitHub Issue Reference",
           "emoji": true
         },
         "submit": {
@@ -138,20 +130,20 @@ app.shortcut('fbcase', async ({ ack, body, context }) => {
             "type": "section",
             "text": {
               "type": "plain_text",
-              "text": "Please enter information below for the case to reference.",
+              "text": "Please enter information below for the issue to reference.",
               "emoji": true
             }
           },
           {
             "type": "input",
-            "block_id": "case-number",
+            "block_id": "issue-number",
             "element": {
               "type": "plain_text_input",
-              "action_id": "case-value"
+              "action_id": "issue-value"
             },
             "label": {
               "type": "plain_text",
-              "text": "Case Number",
+              "text": "Issue Number",
               "emoji": true
             }
           },
@@ -183,7 +175,7 @@ app.shortcut('fbcase', async ({ ack, body, context }) => {
             },
             "label": {
               "type": "plain_text",
-              "text": "Why are you linking to this case?",
+              "text": "Why are you linking to this issue?",
               "emoji": true
             }
           },
@@ -211,10 +203,10 @@ app.shortcut('fbcase', async ({ ack, body, context }) => {
   }
 });
 
-app.view('case-reference', async ({ ack, body, view, context }) => {
+app.view('issue-reference', async ({ ack, body, view, context }) => {
   await ack();
 
-  const case_number = view['state']['values']['case-number']['case-value']['value'];
+  const issue_number = view['state']['values']['issue-number']['issue-value']['value'];
   const reason = view['state']['values']['reason']['reason-value']['value'];
   const user = body['user']['id'];
   const conversation = view['state']['values']['channel_select']['channel_selection']['selected_conversation'];
@@ -227,7 +219,7 @@ app.view('case-reference', async ({ ack, body, view, context }) => {
     notify += `<@${selected_friends[i]}> `
   }
 
-  let msg = `FogBugz: <https://mhk.thunderheadeng.net/fogbugz/default.asp?${case_number}|${case_number}>, "${reason}" - To: ${notify} From: <@${user}>`;
+  let msg = `FogBugz: <https://mhk.thunderheadeng.net/fogbugz/default.asp?${issue_number}|${issue_number}>, "${reason}" - To: ${notify} From: <@${user}>`;
 
   // Message the channel
   try {

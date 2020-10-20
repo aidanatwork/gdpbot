@@ -1,256 +1,139 @@
-require('dotenv').config()
-const { App } = require('@slack/bolt');
-const fetch = require('node-fetch');
-const parseString = require('xml2js').parseString;
-const fbtoken = process.env.FOGBUGZ_TOKEN
-const api_domain = process.env.GIT_DOMAIN
-const api_owner = process.env.GIT_OWNER
+const dotenv = require('dotenv');
+dotenv.config();
+const http = require('http');
+const express = require('express');
+const bodyParser = require('body-parser');
+// TODO: refactor so we don't need to use 'request'. It's deprecated.
+const request = require('request');
+const axios = require('axios');
+const clientId = process.env.CLIENT_ID
+const clientSecret = process.env.CLIENT_SECRET
+const issuesDomain = process.env.GIT_ISSUES_DOMAIN
+const apiDomain = process.env.GIT_API_DOMAIN
+const owner = process.env.GIT_OWNER
+const repos = process.env['GIT_REPOS ']
+const PORT = process.env['PORT']
+const botToken = process.env.SLACK_BOT_TOKEN;
+const issueRegex = /issue\s[0-9]+/gim;
 
+//TODO - automatically add this bot to any new channel that is created
 
-// Initializes your app with your bot token and signing secret
-const app = new App({
-  token: process.env.SLACK_BOT_TOKEN,
-  signingSecret: process.env.SLACK_SIGNING_SECRET
-});
-
-// Listens to incoming messages that mention an issue number in "issue XXXX" format.
-app.message(/issue\s[0-9]+/gim, async ({ message, context, say }) => {
-
-  var issue_links = '';
-  var mLen = context.matches.length;
-  var issue_numbers = [];
-
-  for (i = 0; i < mLen; i++) {
-    issue_number = context.matches[i].split(" ")[1]
-    issue_title = ''
-    issue_category = ''
-
-    if (issue_numbers.includes(issue_number)) {
-      continue
-    }
-    else {
-      issue_numbers.push(issue_number)
-    
-      await fetch(`https://mhk.thunderheadeng.net/fogbugz/api.asp?token=${fbtoken}&cmd=search&cols=sTitle,sCategory&q=${issue_number}`)
-        .then(res => res.text())
-        .then(body => parseString(body, function (err, result) {
-          //console.dir(result,{depth: null})
-          if ( result.response.issues[0].$.count != '0' ) {
-            issue_title = result.response.issues[0].issue[0].sTitle[0]
-            issue_category = result.response.issues[0].issue[0].sCategory[0]
-          }        
-        }));
-      
-      if (issue_title != '') {
-        issue_links += `<https://mhk.thunderheadeng.net/fogbugz/default.asp?${issue_number}|${issue_number}: '${issue_title}'>, `
-      }
-      else {
-        issue_links += `~${issue_number}: N/A~, `
-      } 
-    }
-  }
-
-  await say({
-    blocks: [
-    {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": `See issue(s) ${issue_links}that <@${message.user}> mentioned.`
-      }
-    }
-    ]
+//TODO - check if the link to GitHub is actually valid before adding it to reply
+//create issue link
+const createIssueLink = function(repo, issueNumber) {
+  var newLink = issuesDomain + "/" + owner + "/" + repo + "/issues/" + issueNumber;
+  return newLink;
+};
+//create issue link text
+//TODO - change this so it determines the repo name based on which channel it is in.
+const createIssueLinksText = function (msg_text) {
+  /*return msg_text.replace(issueRegex, function (match) {
+    var issueNumber = match.split(" ")[1];
+    var newLink = createIssueLink('templates', issueNumber);
+    return 'See GitHub <' + newLink + '|' + match + '> that was just mentioned.';
+  });*/
+  let new_msg = '';
+  msg_text.match(issueRegex).forEach(function(item) {
+    let issueNumber = item.split(" ")[1];
+    let newLink = createIssueLink('templates', issueNumber);
+    new_msg += 'See GitHub <' + newLink + '|' + item + '> that was just mentioned.\n';
   });
-});
-
-/* app.event('reaction_added', async ({ event, say }) => {
-  if (event.reaction === 'calendar') {
-    await say({
-      blocks: [{
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
-          "text": "Pick a date for me to remind you"
-        },
-        "accessory": {
-          "type": "datepicker",
-          "action_id": "datepicker_remind",
-          "initial_date": curday('-'),
-          "placeholder": {
-            "type": "plain_text",
-            "text": "Select a date"
-          }
-        }
-      }]
-    });
-  }
-}); */
-
-/* app.action('datepicker_remind', async ({ body, ack, say }) => {
-  await ack();
-  await say(`Date Selected 👍`);
-}); */
-
-// The echo command simply echoes on command
-app.command('/issue', async ({ command, ack, say }) => {
-  await ack();
-  await say(`Issue Link: <https://mhk.thunderheadeng.net/fogbugz/default.asp?${command.text}|${command.text}>`);
-});
-
-// Listen for a slash command invocation
-app.shortcut('fbcase', async ({ ack, body, context }) => {
-  await ack();
-
-  try {
-    const result = await app.client.views.open({
-      token: context.botToken,
-      // Pass a valid trigger_id within 3 seconds of receiving it
-      trigger_id: body.trigger_id,
-      // View payload
-      view: {
-        "type": "modal",
-        "callback_id": "issue-reference",
-        "title": {
-          "type": "plain_text",
-          "text": "GitHub Issue Reference",
-          "emoji": true
-        },
-        "submit": {
-          "type": "plain_text",
-          "text": "Submit",
-          "emoji": true
-        },
-        "close": {
-          "type": "plain_text",
-          "text": "Cancel",
-          "emoji": true
-        },
-        "blocks": [
-          {
-            "type": "section",
-            "text": {
-              "type": "plain_text",
-              "text": "Please enter information below for the issue to reference.",
-              "emoji": true
-            }
-          },
-          {
-            "type": "input",
-            "block_id": "issue-number",
-            "element": {
-              "type": "plain_text_input",
-              "action_id": "issue-value"
-            },
-            "label": {
-              "type": "plain_text",
-              "text": "Issue Number",
-              "emoji": true
-            }
-          },
-          {
-            "type": "input",
-            "block_id": "notification",
-            "element": {
-              "type": "multi_users_select",
-              "action_id": "notification-value",
-              "placeholder": {
-                "type": "plain_text",
-                "text": "Select users",
-                "emoji": true
-              }
-            },
-            "label": {
-              "type": "plain_text",
-              "text": "Select friend(s)",
-              "emoji": true
-            }
-          },
-          {
-            "type": "input",
-            "block_id": "reason",
-            "element": {
-              "type": "plain_text_input",
-              "action_id": "reason-value",
-              "multiline": true
-            },
-            "label": {
-              "type": "plain_text",
-              "text": "Why are you linking to this issue?",
-              "emoji": true
-            }
-          },
-          {
-            "block_id": "channel_select",
-            "type": "input",
-            "optional": true,
-            "label": {
-              "type": "plain_text",
-              "text": "Select a channel to post the result in"
-            },
-            "element": {
-              "action_id": "channel_selection",
-              "type": "conversations_select",
-              "response_url_enabled": true,
-              "default_to_current_conversation": true,
-            },
-          },
-        ]
-      }
-    });
-  }
-  catch (error) {
-    console.error(error);
-  }
-});
-
-app.view('issue-reference', async ({ ack, body, view, context }) => {
-  await ack();
-
-  const issue_number = view['state']['values']['issue-number']['issue-value']['value'];
-  const reason = view['state']['values']['reason']['reason-value']['value'];
-  const user = body['user']['id'];
-  const conversation = view['state']['values']['channel_select']['channel_selection']['selected_conversation'];
-  const selected_friends = view['state']['values']['notification']['notification-value']['selected_users'];
-
-  var notify = ''
-  let fLen = selected_friends.length;
-
-  for (i = 0; i < fLen; i++) {
-    notify += `<@${selected_friends[i]}> `
-  }
-
-  let msg = `FogBugz: <https://mhk.thunderheadeng.net/fogbugz/default.asp?${issue_number}|${issue_number}>, "${reason}" - To: ${notify} From: <@${user}>`;
-
-  // Message the channel
-  try {
-    await app.client.chat.postMessage({
-      token: context.botToken,
-      channel: conversation,
-      text: msg
-    });
-  }
-  catch (error) {
-    console.error(error);
-  }
-
-  //console.log(`View Data:${JSON.stringify(view)}`)
-
-});
-
-var curday = function(sp){
-  today = new Date();
-  var dd = today.getDate();
-  var mm = today.getMonth()+1; //As January is 0.
-  var yyyy = today.getFullYear();
-  
-  if(dd<10) dd='0'+dd;
-  if(mm<10) mm='0'+mm;
-  return (yyyy+sp+mm+sp+dd);
+  return new_msg;
 };
 
-(async () => {
-  // Start your app
-  await app.start(process.env.PORT || 8080);
+//send reply to issue mention
+const replyWithIssue = function(msg_text, channel) {
+  let new_msg_text = createIssueLinksText(msg_text);
+  let new_msg = {
+    "channel":channel,
+    "text":new_msg_text
+  };
+  let config = {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + botToken
+    }
+  };
+  axios
+    .post('https://slack.com/api/chat.postMessage', new_msg, config)
+    .then(function (response) {
+      //console.log('Response:');
+      //console.log(response);
+    })
+    .catch(function (error) {
+      console.error(error);
+    });
+};
 
-  console.log('⚡️ GDP SlackBot is running!');
-})();
+// instantiate and configure Express app
+const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json()); // Body parser use JSON data
+
+// Start the server
+app.listen(PORT, function () {
+  console.log("App is listening on port " + PORT);
+});
+
+// handle health check for app (not through Slack)
+app.get('/', function(req, res) {
+  res.send('GDP Bot is working! Path Hit: ' + req.url);
+});
+// Handle request to /oauth endpoint. We'll use this endpoint for handling the logic of the Slack oAuth process behind our app.
+app.get('/oauth', function(req, res) {
+  // When a user authorizes an app, a code query parameter is passed on the oAuth endpoint. If that code is not there, we respond with an error message
+  if (!req.query.code) {
+    res.status(500);
+    res.send({"Error": "Looks like we're not getting code."});
+    console.log("Looks like we're not getting code.");
+  } else {
+    // If it's there...
+
+    // We'll do a GET call to Slack's `oauth.access` endpoint, passing our app's client ID, client secret, and the code we just got as query parameters.
+    request({
+      url: 'https://slack.com/api/oauth.access', //URL to hit
+      qs: {code: req.query.code, client_id: clientId, client_secret: clientSecret}, //Query string data
+      method: 'GET', //Specify the method
+
+    }, function (error, response, body) {
+      if (error) {
+        console.log(error);
+      } else {
+        res.json(body);
+      }
+    })
+  }
+});
+// Handle /hellobot slash command to test that app is connected to Slack
+app.post('/command', function(req, res) {
+  console.log('someone said hi');
+  res.send('Hello! I\'m the GDP Bot.');
+});
+
+//Provide a GitHub link when an issue is mentioned with the /issue slash command in a channel.
+/*app.post('/issue', function(req, res) {
+  console.log('/issue command was received');
+  res.sendStatus(200);
+  var msg = req.body;
+  var msg_text = msg.text;
+  var channel = msg.channel_id;
+  if (issueRegex.test(msg_text)) {
+    replyWithIssue(msg_text, channel);
+  }
+});*/
+
+// This route listens for "issue" in a message, and if it is followed by a number, brings in the GitHub link for that issue.
+app.post('/message', function(req, res){
+  //console.log('A message was received');
+  res.sendStatus(200);
+  if (req.body.event.bot_profile && req.body.event.bot_profile.name == "gdpbot") {
+  } else {
+    let msg = req.body;
+    //console.log('msg: ' + JSON.stringify(msg));
+    let msg_text = msg.event.blocks[0].elements[0].elements[0].text;
+    let channel = msg.event.channel;
+    if (issueRegex.test(msg_text)) {
+      replyWithIssue(msg_text, channel);
+    }
+  }
+});

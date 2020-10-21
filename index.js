@@ -1,18 +1,19 @@
 const dotenv = require('dotenv');
 dotenv.config();
+//TODO - check if 'http' package can be safely removed here
 const http = require('http');
 const express = require('express');
 const bodyParser = require('body-parser');
 // TODO: refactor so we don't need to use 'request'. It's deprecated.
 const request = require('request');
 const axios = require('axios');
-const clientId = process.env.CLIENT_ID
-const clientSecret = process.env.CLIENT_SECRET
-const issuesDomain = process.env.GIT_ISSUES_DOMAIN
-const apiDomain = process.env.GIT_API_DOMAIN
-const owner = process.env.GIT_OWNER
-const repos = process.env['GIT_REPOS ']
-const PORT = process.env['PORT']
+const clientId = process.env.CLIENT_ID;
+const clientSecret = process.env.CLIENT_SECRET;
+const issuesDomain = process.env.GIT_ISSUES_DOMAIN;
+const apiDomain = process.env.GIT_API_DOMAIN;
+const owner = process.env.GIT_OWNER;
+const repos = process.env.GIT_REPOS;
+const PORT = process.env.PORT;
 const botToken = process.env.SLACK_BOT_TOKEN;
 const issueRegex = /issue\s[0-9]+/gim;
 
@@ -122,6 +123,7 @@ app.post('/command', function(req, res) {
   }
 });*/
 
+// TODO - fix so this can reply to mentions in private channels. right now only works for public channels.
 // This route listens for "issue" in a message, and if it is followed by a number, brings in the GitHub link for that issue.
 app.post('/message', function(req, res){
   //console.log('A message was received');

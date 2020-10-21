@@ -28,11 +28,6 @@ const createIssueLink = function(repo, issueNumber) {
 //create issue link text
 //TODO - change this so it determines the repo name based on which channel it is in.
 const createIssueLinksText = function (msg_text) {
-  /*return msg_text.replace(issueRegex, function (match) {
-    var issueNumber = match.split(" ")[1];
-    var newLink = createIssueLink('templates', issueNumber);
-    return 'See GitHub <' + newLink + '|' + match + '> that was just mentioned.';
-  });*/
   let new_msg = '';
   msg_text.match(issueRegex).forEach(function(item) {
     let issueNumber = item.split(" ")[1];

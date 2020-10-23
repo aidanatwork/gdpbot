@@ -15,6 +15,7 @@ const owner = process.env.GIT_OWNER;
 const repos = process.env.GIT_REPOS;
 const PORT = process.env.PORT;
 const botToken = process.env.SLACK_BOT_TOKEN;
+//TODO - change the regex so it looks for repo name also being specified
 const issueRegex = /issue\s[0-9]+/gim;
 
 //TODO - automatically add this bot to any new channel that is created
@@ -26,7 +27,7 @@ const createIssueLink = function(repo, issueNumber) {
   return newLink;
 };
 //create issue link text
-//TODO - change this so it determines the repo name based on which channel it is in.
+//TODO - change this so the repo name gets pulled out of 'item' and passed to createIssueLink. Maybe map shorthand names to the longer repo names.
 const createIssueLinksText = function (msg_text) {
   let new_msg = '';
   msg_text.match(issueRegex).forEach(function(item) {

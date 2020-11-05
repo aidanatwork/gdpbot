@@ -12,20 +12,13 @@ const clientSecret = process.env.CLIENT_SECRET;
 const issuesDomain = process.env.GIT_ISSUES_DOMAIN;
 const apiDomain = process.env.GIT_API_DOMAIN;
 const gitUser = process.env.GIT_USER;
-const gitPwd = process.env.GIT_PWD;
+const gitToken = process.env.GIT_TOKEN;
 const owner = process.env.GIT_OWNER;
 const repos = process.env.GIT_REPOS;
 const PORT = process.env.PORT;
 const botToken = process.env.SLACK_BOT_TOKEN;
 const issueRegex = /\b[\S]+?\b\sissue\s[0-9]+/gim;
 const linkRegex = /\<.+?\>/gim;
-
-const createBasicAuth = function (user,pwd) {
-  let str = user + ':' + pwd;
-  let buff = Buffer.from(str, 'utf-8');
-  let base64 = buff.toString('base64');
-  return base64;
-};
 
 //TODO - automatically add this bot to any new channel that is created
 
@@ -87,7 +80,7 @@ const replyWithIssue = function(msg_text, channel) {
 };
 
 // create auth string for GitHub
-const basicAuth = 'Basic ' + createBasicAuth(gitUser, gitPwd);
+const tokenAuth = 'token ' + gitToken
 
 // instantiate and configure Express app
 const app = express();
@@ -153,7 +146,7 @@ app.post('/create', function(req, res) {
   };
   let config = {
     headers: {
-      'Authorization': basicAuth,
+      'Authorization': tokenAuth,
       'Content-Type': 'application/vnd.github.v3+json'
     }
   };

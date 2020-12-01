@@ -1,7 +1,5 @@
 const dotenv = require('dotenv');
 dotenv.config();
-//TODO - check if 'http' package can be safely removed here
-const http = require('http');
 const express = require('express');
 const bodyParser = require('body-parser');
 // TODO: refactor so we don't need to use 'request'. It's deprecated.
@@ -10,24 +8,16 @@ const axios = require('axios');
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const issuesDomain = process.env.GIT_ISSUES_DOMAIN;
-const apiDomain = process.env.GIT_API_DOMAIN;
-const gitUser = process.env.GIT_USER;
-const gitToken = process.env.GIT_TOKEN;
 const owner = process.env.GIT_OWNER;
-const repos = process.env.GIT_REPOS;
 const PORT = process.env.PORT;
 const botToken = process.env.SLACK_BOT_TOKEN;
 const issueRegex = /\b[\S]+?\b\sissue\s[0-9]+/gim;
 const linkRegex = /\<.+?\>/gim;
 
-//TODO - automatically add this bot to any new channel that is created
-
-//TODO - check if the link to GitHub is actually valid before adding it to reply
-//create issue link
 const createIssueLink = function(repo, issueNumber) {
   return issuesDomain + "/" + owner + "/" + repo + "/issues/" + issueNumber;
 };
-//strip out links from Slack message text
+
 const stripOutLinks = function(text) {
   var new_text = text;
   if (linkRegex.test(text)) {
@@ -40,8 +30,6 @@ const stripOutLinks = function(text) {
   return new_text;
 };
 
-//create issue link text
-//TODO - change this so the repo name gets pulled out of 'item' and passed to createIssueLink. Maybe map shorthand names to the longer repo names.
 const createIssueLinksText = function (msg_text) {
   let new_msg = '';
   msg_text.match(issueRegex).forEach(function(item) {
@@ -54,8 +42,6 @@ const createIssueLinksText = function (msg_text) {
   return new_msg;
 };
 
-//send reply to issue mention
-//TODO - convert part of match that is hyperlink to just text of the link
 const replyWithIssue = function(msg_text, channel) {
   let new_msg_text = createIssueLinksText(msg_text);
   let new_msg = {
@@ -79,23 +65,21 @@ const replyWithIssue = function(msg_text, channel) {
     });
 };
 
-// create auth string for GitHub
-const tokenAuth = 'token ' + gitToken
-
 // instantiate and configure Express app
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json()); // Body parser use JSON data
 
-// Start the server
+// start the server
 app.listen(PORT, function () {
   console.log("App is listening on port " + PORT);
 });
 
-// handle health check for app (not through Slack)
+// handle health check for app (through browser, not through Slack)
 app.get('/', function(req, res) {
   res.send('GDP Bot is working! Path Hit: ' + req.url);
 });
+
 // Handle request to /oauth endpoint. We'll use this endpoint for handling the logic of the Slack oAuth process behind our app.
 app.get('/oauth', function(req, res) {
   // When a user authorizes an app, a code query parameter is passed on the oAuth endpoint. If that code is not there, we respond with an error message
@@ -104,14 +88,11 @@ app.get('/oauth', function(req, res) {
     res.send({"Error": "Looks like we're not getting code."});
     console.log("Looks like we're not getting code.");
   } else {
-    // If it's there...
-
-    // We'll do a GET call to Slack's `oauth.access` endpoint, passing our app's client ID, client secret, and the code we just got as query parameters.
+    // If it's there, we'll do a GET call to Slack's `oauth.access` endpoint, passing our app's client ID, client secret, and the code we just got as query parameters.
     request({
-      url: 'https://slack.com/api/oauth.access', //URL to hit
+      url: 'https://slack.com/api/oauth.access',
       qs: {code: req.query.code, client_id: clientId, client_secret: clientSecret}, //Query string data
-      method: 'GET', //Specify the method
-
+      method: 'GET'
     }, function (error, response, body) {
       if (error) {
         console.log(error);
@@ -127,45 +108,6 @@ app.post('/command', function(req, res) {
   res.send('Hello! I\'m the GDP Bot.');
 });
 
-//Provide a GitHub link when an issue is mentioned with the /issue slash command in a channel.
-app.post('/create', function(req, res) {
-  console.log('/create command was received');
-  res.sendStatus(200);
-  let msg = req.body;
-  console.log('msg: ' + JSON.stringify(msg));
-  let msg_text = stripOutLinks(msg.text).trim();
-  let split_msg = msg_text.split("|");
-  let repo = split_msg[0].trim();
-  let title = split_msg[1].trim();
-  let body = split_msg[2].trim();
-  let url = apiDomain + "/repos/" + owner + "/" + repo + "/issues";
-  console.log('url: ' + url);
-  let data = {
-    "title": title,
-    "body": body
-  };
-  let config = {
-    headers: {
-      'Authorization': tokenAuth,
-      'Content-Type': 'application/vnd.github.v3+json'
-    }
-  };
-  axios
-    .post(url, data, config)
-    .then(function (response) {
-      console.log('Response:');
-      console.log(response);
-    })
-    .catch(function (error) {
-      console.error(error);
-    });
-  let channel = msg.channel_id;
-  /*if (issueRegex.test(msg_text)) {
-    replyWithIssue(msg_text, channel);
-  }*/
-});
-
-// TODO - fix so this can reply to mentions in private channels. right now only works for public channels.
 // This route listens for "issue" in a message, and if it is followed by a number, brings in the GitHub link for that issue.
 app.post('/message', function(req, res){
   //console.log('A message was received');

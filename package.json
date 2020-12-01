@@ -2,7 +2,7 @@
   "name": "gdp_bot",
   "version": "1.0.0",
   "description": "A bot connecting Good Docs Project Slack to GitHub",
-  "main": "index_old.js",
+  "main": "index.js",
   "dependencies": {
     "@slack/bolt": "^2.4.1",
     "axios": "^0.20.0",

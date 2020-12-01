@@ -7,7 +7,7 @@ const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const issuesDomain = process.env.GIT_ISSUES_DOMAIN;
 const owner = process.env.GIT_OWNER;
-const PORT = process.env.PORT;
+const port = process.env.PORT || 4390;
 const botToken = process.env.SLACK_BOT_TOKEN;
 const issueRegex = /\b[\S]+?\b\sissue\s[0-9]+/gim;
 const linkRegex = /\<.+?\>/gim;
@@ -69,8 +69,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json()); // Body parser use JSON data
 
 // start the server
-app.listen(PORT, function () {
-  console.log("App is listening on port " + PORT);
+app.listen(port, function () {
+  console.log("App is listening on port " + port);
 });
 
 // handle health check for app (through browser, not through Slack)

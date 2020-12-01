@@ -2,8 +2,6 @@ const dotenv = require('dotenv');
 dotenv.config();
 const express = require('express');
 const bodyParser = require('body-parser');
-// TODO: refactor so we don't need to use 'request'. It's deprecated.
-const request = require('request');
 const axios = require('axios');
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
@@ -88,34 +86,38 @@ app.get('/oauth', function(req, res) {
     res.send({"Error": "Looks like we're not getting code."});
     console.log("Looks like we're not getting code.");
   } else {
-    // If it's there, we'll do a GET call to Slack's `oauth.access` endpoint, passing our app's client ID, client secret, and the code we just got as query parameters.
-    request({
-      url: 'https://slack.com/api/oauth.access',
-      qs: {code: req.query.code, client_id: clientId, client_secret: clientSecret}, //Query string data
-      method: 'GET'
-    }, function (error, response, body) {
-      if (error) {
-        console.log(error);
-      } else {
-        res.json(body);
+    let config = {
+      params: {
+        code: req.query.code,
+        client_id: clientId,
+        client_secret: clientSecret
       }
-    })
+    };
+    // If it's there, we'll do a GET call to Slack's `oauth.access` endpoint, passing our app's client ID, client secret, and the code we just got as query parameters.
+    axios
+      .get('https://slack.com/api/oauth.access', config)
+      .then(function (response) {
+        console.log('Response:');
+        console.log(response);
+      })
+      .catch(function (error) {
+        console.error(error);
+      });
   }
 });
 // Handle /hellobot slash command to test that app is connected to Slack
 app.post('/command', function(req, res) {
-  console.log('someone said hi');
+  //console.log('someone said hi');
   res.send('Hello! I\'m the GDP Bot.');
 });
 
 // This route listens for "issue" in a message, and if it is followed by a number, brings in the GitHub link for that issue.
 app.post('/message', function(req, res){
   //console.log('A message was received');
-  res.sendStatus(200);
-  if (req.body.event.bot_profile && req.body.event.bot_profile.name == "gdpbot") {
+  //res.status(200).send(req.body.challenge); <-- use this when Slack is verifying a new callback URL for events
+  if (req.body.event.bot_profile && req.body.event.bot_profile.name === "gdpbot") {
   } else {
     let msg = req.body;
-    //console.log('msg: ' + JSON.stringify(msg));
     let msg_text = msg.event.text;
     msg_text = stripOutLinks(msg_text);
     let channel = msg.event.channel;

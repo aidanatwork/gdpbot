@@ -120,7 +120,7 @@ app.post('/message', function(req, res){
   }
   else if ( req.body.event.bot_profile && req.body.event.bot_profile.name === "gdpbot") {
   }
-  else if (req.body.event.message.bot_profile && req.body.event.message.bot_profile.name === "gdpbot") {
+  else if (req.body.event.message && req.body.event.message.bot_profile && req.body.event.message.bot_profile.name === "gdpbot") {
   } else {
     let msg = req.body;
     let msg_text = msg.event.text;

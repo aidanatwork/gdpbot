@@ -119,6 +119,7 @@ app.post('/message', function(req, res){
   }
   else if (req.body.event.bot_profile && req.body.event.bot_profile.name === "gdpbot") {
   } else {
+    console.log('req.body: ' + JSON.stringify(req.body));
     let msg = req.body;
     let msg_text = msg.event.text;
     msg_text = stripOutLinks(msg_text);

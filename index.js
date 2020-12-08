@@ -117,7 +117,9 @@ app.post('/message', function(req, res){
   if (req.body.challenge) {
     res.status(200).send(req.body.challenge); // use this when Slack is verifying a new callback URL for events
   }
-  else if (req.body.event.bot_profile && req.body.event.bot_profile.name === "gdpbot") {
+  else if ( req.body.event.bot_profile && req.body.event.bot_profile.name === "gdpbot") {
+  }
+  else if (req.body.event.message.bot_profile && req.body.event.message.bot_profile.name === "gdpbot") {
   } else {
     console.log('req.body: ' + JSON.stringify(req.body));
     let msg = req.body;

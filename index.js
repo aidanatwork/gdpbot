@@ -113,10 +113,9 @@ app.post('/command', function(req, res) {
 
 // This route listens for "issue" in a message, and if it is followed by a number, brings in the GitHub link for that issue.
 app.post('/message', function(req, res){
-  /** Use these statements for troubleshooting.
-  console.log('A message was received');
+  /* Use these statements for troubleshooting. */
+  //console.log('A message was received');
   console.log('\nreq.body: ' + JSON.stringify(req.body) + '\n');
-  */
   if (req.body.challenge) {
     res.status(200).send(req.body.challenge); // use this when Slack is verifying a new callback URL for events
   }

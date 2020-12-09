@@ -115,7 +115,7 @@ app.post('/command', function(req, res) {
 app.post('/message', function(req, res){
   /* Use these statements for troubleshooting. */
   //console.log('A message was received');
-  //console.log('\nreq.body: ' + JSON.stringify(req.body) + '\n');
+  console.log('\nreq.body: ' + JSON.stringify(req.body) + '\n');
   if (req.body.challenge) {
     res.status(200).send(req.body.challenge); // use this when Slack is verifying a new callback URL for events
   } else if ( req.body.event.bot_profile && req.body.event.bot_profile.name === "gdpbot") {

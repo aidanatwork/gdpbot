@@ -120,7 +120,7 @@ app.post('/message', function(req, res){
     res.status(200).send(req.body.challenge); // use this when Slack is verifying a new callback URL for events
     /*} else if ( req.body.event.bot_profile && req.body.event.bot_profile.name === "gdpbot") {
     } else if (req.body.event.message && req.body.event.message.bot_profile && req.body.event.message.bot_profile.name === "gdpbot") {*/
-  } else if ( ( req.body.event && req.body.event.hasOwnProperty(bot_profile) ) || ( req.body.event.message && req.body.event.message.hasOwnProperty(bot_profile) ) ) {
+  } else if ( ( req.body.event && req.body.event.hasOwnProperty('bot_profile') ) || ( req.body.event.message && req.body.event.message.hasOwnProperty('bot_profile') ) ) {
     console.log('\nthis is from a bot\n');
   } else {
     let msg = req.body;

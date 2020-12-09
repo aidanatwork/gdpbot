@@ -35,7 +35,8 @@ const createIssueLinksText = function (msg_text) {
     let issueNumber = itemArray[1].trim();
     let issueRepo = itemArray[0].trim();
     let newLink = createIssueLink(issueRepo, issueNumber);
-    new_msg += 'See GitHub <' + newLink + '|' + item + '> that was just mentioned.\n';
+    let linkText = issueRepo + ' ' + issueNumber;
+    new_msg += 'See GitHub <' + newLink + '|' + linkText + '> that was just mentioned.\n';
   });
   return new_msg;
 };

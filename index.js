@@ -121,7 +121,7 @@ app.post('/message', function(req, res){
     } else if (req.body.event.message && req.body.event.message.bot_profile && req.body.event.message.bot_profile.name === "gdpbot") {*/
   } else if ( ( req.body.event && req.body.event.hasOwnProperty('bot_profile') ) || ( req.body.event.message && req.body.event.message.hasOwnProperty('bot_profile') ) ) {
     console.log('\nthis is identified as a bot\n');
-    console.log('\nreq.body: ' + JSON.stringify(req.body) + '\n');
+    //console.log('\nreq.body: ' + JSON.stringify(req.body) + '\n');
   } else {
     console.log('\nthis is NOT identified as a bot\n');
     console.log('\nreq.body: ' + JSON.stringify(req.body) + '\n');

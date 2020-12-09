@@ -115,14 +115,16 @@ app.post('/command', function(req, res) {
 app.post('/message', function(req, res){
   /* Use these statements for troubleshooting. */
   //console.log('A message was received');
-  console.log('\nreq.body: ' + JSON.stringify(req.body) + '\n');
   if (req.body.challenge) {
     res.status(200).send(req.body.challenge); // use this when Slack is verifying a new callback URL for events
     /*} else if ( req.body.event.bot_profile && req.body.event.bot_profile.name === "gdpbot") {
     } else if (req.body.event.message && req.body.event.message.bot_profile && req.body.event.message.bot_profile.name === "gdpbot") {*/
   } else if ( ( req.body.event && req.body.event.hasOwnProperty('bot_profile') ) || ( req.body.event.message && req.body.event.message.hasOwnProperty('bot_profile') ) ) {
-    console.log('\nthis is from a bot\n');
+    console.log('\nthis is identified as a bot\n');
+    console.log('\nreq.body: ' + JSON.stringify(req.body) + '\n');
   } else {
+    console.log('\nthis is NOT identified as a bot\n');
+    console.log('\nreq.body: ' + JSON.stringify(req.body) + '\n');
     let msg = req.body;
     let msg_text = msg.event.text;
     msg_text = stripOutLinks(msg_text);

@@ -118,9 +118,9 @@ app.post('/message', function(req, res){
   console.log('\nreq.body: ' + JSON.stringify(req.body) + '\n');
   if (req.body.challenge) {
     res.status(200).send(req.body.challenge); // use this when Slack is verifying a new callback URL for events
-  } else if ( req.body.event.bot_profile && req.body.event.bot_profile.name === "gdpbot") {
-  } else if (req.body.event.message && req.body.event.message.bot_profile && req.body.event.message.bot_profile.name === "gdpbot") {
-  } else {
+  /*} else if ( req.body.event.bot_profile && req.body.event.bot_profile.name === "gdpbot") {
+  } else if (req.body.event.message && req.body.event.message.bot_profile && req.body.event.message.bot_profile.name === "gdpbot") {*/
+  } else if (!req.body.event.bot_profile && !req.body.event.message.bot_profile) {
     let msg = req.body;
     let msg_text = msg.event.text;
     msg_text = stripOutLinks(msg_text);
@@ -128,5 +128,7 @@ app.post('/message', function(req, res){
     if (issueRegex.test(msg_text)) {
       replyWithIssue(msg_text, channel);
     }
+  } else {
+    console.log('all conditions failed');
   }
 });
